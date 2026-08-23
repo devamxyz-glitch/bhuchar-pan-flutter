@@ -8,11 +8,12 @@ import 'theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+ await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
 
-  runApp(const BhucharPanApp());
+
+runApp(const BhucharPanApp());
 }
 
 class BhucharPanApp extends StatelessWidget {
