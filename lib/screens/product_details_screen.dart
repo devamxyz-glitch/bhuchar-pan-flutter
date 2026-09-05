@@ -394,7 +394,7 @@ class _ProductDetailsScreenState
               ),
               Center(
                 child: Hero(
-                  tag: 'product-${_resolvedProductId}',
+                  tag: 'product-$_resolvedProductId',
                   child: _ProductImage(
                     imageUrl: widget.imageUrl,
                     icon: widget.icon,
@@ -1397,8 +1397,7 @@ class _RelatedProduct {
     this.oldPrice,
     required this.icon,
     this.tag,
-    this.imageUrl,
-  });
+  }) : imageUrl = null;
 }
 
 const List<_RelatedProduct> _relatedProducts = [

@@ -19,7 +19,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   static const Color background = Color(0xFF050505);
   static const Color surface = Color(0xFF0D0D0D);
-  static const Color surface2 = Color(0xFF121212);
 
   static const Color gold = Color(0xFFD6B15E);
   static const Color goldLight = Color(0xFFF4D88A);
@@ -1060,13 +1059,13 @@ class _ProfileScreenState extends State<ProfileScreen>
         reverseTransitionDuration: const Duration(
           milliseconds: 300,
         ),
-        pageBuilder: (_, animation, __) {
+        pageBuilder: (_, animation, _) {
           return const _AboutPage();
         },
         transitionsBuilder: (
           _,
           animation,
-          __,
+          _,
           child,
         ) {
           final curve = CurvedAnimation(
@@ -1588,8 +1587,7 @@ class _PremiumTile extends StatelessWidget {
     required this.subtitle,
     required this.accent,
     required this.onTap,
-    this.trailing,
-  });
+  }) : trailing = null;
 
   @override
   Widget build(BuildContext context) {
