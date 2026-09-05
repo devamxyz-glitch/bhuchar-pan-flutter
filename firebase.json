@@ -1,1 +1,25 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"bhuchar-pan-app","appId":"1:935521143416:android:9848a8cf29dc252cc9fb8d","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"bhuchar-pan-app","configurations":{"android":"1:935521143416:android:9848a8cf29dc252cc9fb8d","ios":"1:935521143416:ios:3c4ec71462abe211c9fb8d"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "bhuchar-pan-app",
+          "appId": "1:935521143416:android:9848a8cf29dc252cc9fb8d",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "bhuchar-pan-app",
+          "configurations": {
+            "android": "1:935521143416:android:9848a8cf29dc252cc9fb8d",
+            "ios": "1:935521143416:ios:3c4ec71462abe211c9fb8d"
+          }
+        }
+      }
+    }
+  }
+}

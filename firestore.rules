@@ -1,0 +1,225 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /*
+     * ============================================================
+     * BHUCHAR PAN - PRODUCTION FIRESTORE SECURITY RULES
+     * ============================================================
+     *
+     * Security model:
+     *
+     * CUSTOMER
+     *   - Must be authenticated.
+     *   - Can read public products.
+     *   - Can access only their own user document.
+     *   - Can create only their own orders.
+     *   - Cannot update/delete orders.
+     *
+     * SUPER ADMIN
+     *   - Must be authenticated.
+     *   - Must exist in /admins/{uid}.
+     *   - approved must be true.
+     *   - role must be exactly "super_admin".
+     *   - Can manage products.
+     *   - Can manage orders.
+     *   - Can manage customer documents.
+     *
+     * DEFAULT
+     *   - Everything else is DENIED.
+     *
+     * IMPORTANT:
+     *   Firestore Rules are authorization controls.
+     *   They are NOT DDoS protection or application-level
+     *   rate limiting.
+     * ============================================================
+     */
+
+
+    /*
+     * ============================================================
+     * AUTHENTICATION
+     * ============================================================
+     */
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+
+    /*
+     * ============================================================
+     * SUPER ADMIN AUTHORIZATION
+     * ============================================================
+     *
+     * Admin privilege is never accepted from the client request.
+     * It must come from the existing /admins/{uid} document.
+     */
+
+    function isSuperAdmin() {
+      return isSignedIn()
+        && exists(
+          /databases/$(database)/documents/admins/$(request.auth.uid)
+        )
+        && get(
+          /databases/$(database)/documents/admins/$(request.auth.uid)
+        ).data.approved == true
+        && get(
+          /databases/$(database)/documents/admins/$(request.auth.uid)
+        ).data.role == "super_admin";
+    }
+
+
+    /*
+     * ============================================================
+     * ADMINS
+     * ============================================================
+     *
+     * Admin documents can NEVER be created, updated or deleted
+     * through the client application.
+     *
+     * This prevents privilege escalation.
+     */
+
+    match /admins/{adminId} {
+
+      /*
+       * An approved admin can read ONLY their own admin record.
+       */
+      allow read: if isSuperAdmin()
+        && adminId == request.auth.uid;
+
+      /*
+       * Absolutely no client-side admin creation/modification.
+       *
+       * Admin records must be provisioned through a trusted
+       * server/admin environment.
+       */
+      allow create, update, delete: if false;
+    }
+
+
+    /*
+     * ============================================================
+     * ORDERS
+     * ============================================================
+     */
+
+    match /orders/{orderId} {
+
+      /*
+       * CUSTOMER ORDER CREATION
+       *
+       * Customer can create an order only for their own UID.
+       *
+       * The customer cannot update/delete an existing order.
+       */
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+
+      /*
+       * READ:
+       *
+       * Super admin:
+       *   - all orders
+       *
+       * Customer:
+       *   - only their own existing orders
+       */
+      allow read: if isSuperAdmin()
+        || (
+          isSignedIn()
+          && resource.data.userId == request.auth.uid
+        );
+
+      /*
+       * ONLY SUPER ADMIN CAN MODIFY ORDER STATE.
+       */
+      allow update, delete: if isSuperAdmin();
+    }
+
+
+    /*
+     * ============================================================
+     * PRODUCTS
+     * ============================================================
+     *
+     * Products are public catalogue data.
+     */
+
+    match /products/{productId} {
+
+      /*
+       * Anyone can read public product catalogue.
+       */
+      allow read: if true;
+
+      /*
+       * Only approved super admins can modify products.
+       */
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+
+    /*
+     * ============================================================
+     * USERS
+     * ============================================================
+     */
+
+    match /users/{userId} {
+
+      /*
+       * Super admin can manage customer documents.
+       */
+      allow read, write: if isSuperAdmin();
+
+      /*
+       * Customer can access ONLY their own document.
+       */
+      allow read: if isSignedIn()
+        && request.auth.uid == userId;
+
+      /*
+       * Customer can modify only their own document.
+       *
+       * Privilege-related fields are explicitly protected.
+       */
+      allow create: if isSignedIn()
+        && request.auth.uid == userId;
+
+      allow update: if isSignedIn()
+        && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny([
+            "role",
+            "admin",
+            "isAdmin",
+            "approved",
+            "isSuperAdmin",
+            "permissions"
+          ]);
+
+      /*
+       * Customer cannot delete their own account document
+       * through Firestore.
+       */
+      allow delete: if isSuperAdmin();
+    }
+
+
+    /*
+     * ============================================================
+     * GLOBAL DEFAULT DENY
+     * ============================================================
+     *
+     * Any collection/document not explicitly permitted above
+     * is inaccessible.
+     */
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
